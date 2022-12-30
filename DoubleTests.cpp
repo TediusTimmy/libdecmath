@@ -2042,6 +2042,8 @@ TEST(DMDoubleTest, testDoubleConversions)
    EXPECT_EQ(-10000000000.0, dm_double_todouble(DM_DOUBLE_PACK(1, 10, 1000000000000000ULL)));
    EXPECT_EQ(1e100, dm_double_todouble(DM_DOUBLE_PACK(0, 100, 1000000000000000ULL)));
    EXPECT_EQ(-1e100, dm_double_todouble(DM_DOUBLE_PACK(1, 100, 1000000000000000ULL)));
+   EXPECT_EQ(1e100, static_cast<double>(dm_double_tolongdouble(DM_DOUBLE_PACK(0, 100, 1000000000000000ULL))));
+   EXPECT_EQ(-1e100, static_cast<double>(dm_double_tolongdouble(DM_DOUBLE_PACK(1, 100, 1000000000000000ULL))));
    EXPECT_EQ(0.5, dm_double_todouble(DM_DOUBLE_PACK(0, -1, 5000000000000000ULL)));
    EXPECT_EQ(-0.5, dm_double_todouble(DM_DOUBLE_PACK(1, -1, 5000000000000000ULL)));
 
