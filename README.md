@@ -3,7 +3,7 @@ libdecmath
 
 A library for doing decimal math. This library is C code implementing a decimal floating point type inspired by the IEEE 754-2008 decimal64 floating point format. It also has 16 digits of precision: while it is not binary compatible with the decimal64 format, it ought to produce the same results for calculations that do not have overflows to infinity or underflow to subnormals. The only really odd thing about the representation is that setting it to all zero bits gives the number 1.0.
 
-The library requires 64 bit math, and the type uint64_t to be defined. The underlying type of the data is uint64_t, so a dm_double can be passed around like normal doubles and integers in code. It will also try to use a 128 bit type, if it believes it to be available. The library includes a stripped-down sub-library for doing 128 bit calculations, should an 128 bit integral type not be available.
+The library requires 64 bit math, and the type uint64_t to be defined. The underlying type of the data is uint64_t, so a dm_double can be passed around like normal doubles and integers in code. It will also try to use a 128 bit type, if it believes it to be available. The library includes a stripped-down sub-library for doing 128 bit calculations, should an 128 bit integral type not be available. Define DM_NO_128_BIT_TYPE to use that instead.
 
 You can define DM_NO_DOUBLE_MATH to not get conversions to/from double, and DM_NO_LONG_DOUBLE_MATH to not get conversions to/from 'long double'. Note that no double conversions implies no 'long double' conversions. The double conversion tests fail on the Cygwin MingW because 1e100 is one ULP from what I have to assume is the "right" answer. Also 1e300 is three ULPs away.
 

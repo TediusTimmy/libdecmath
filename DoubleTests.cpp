@@ -2014,8 +2014,16 @@ TEST(DMDoubleTest, testDoubleConversions)
    EXPECT_EQ(DM_DOUBLE_PACK(1, 0, 1000000000000000ULL), dm_double_fromdouble(-1.0));
    EXPECT_EQ(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, DM_INFINITY), dm_double_fromdouble(std::pow(10.0, 10000.0)));
    EXPECT_EQ(DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, DM_INFINITY), dm_double_fromdouble(-std::pow(10.0, 10000.0)));
-   EXPECT_EQ(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 127U), dm_double_fromdouble(std::asin(2.0)));
-   EXPECT_EQ(DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 127U), dm_double_fromdouble(-std::asin(2.0)));
+   if (!std::signbit(std::asin(2.0)))
+    {
+      EXPECT_EQ(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 127U), dm_double_fromdouble(std::asin(2.0)));
+      EXPECT_EQ(DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 127U), dm_double_fromdouble(-std::asin(2.0)));
+    }
+   else
+    {
+      EXPECT_EQ(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 127U), dm_double_fromdouble(-std::asin(2.0)));
+      EXPECT_EQ(DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 127U), dm_double_fromdouble(std::asin(2.0)));
+    }
    EXPECT_EQ(DM_DOUBLE_PACK(0, 1, 1000000000000000ULL), dm_double_fromdouble(9.9999999999999999));
    EXPECT_EQ(DM_DOUBLE_PACK(1, 1, 1000000000000000ULL), dm_double_fromdouble(-9.9999999999999999));
    EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 9999999999999998ULL), dm_double_fromdouble(9.9999999999999991)); // This is a limitation of double
@@ -2040,8 +2048,16 @@ TEST(DMDoubleTest, testDoubleConversions)
    EXPECT_EQ(-1.0, dm_double_todouble(DM_DOUBLE_PACK(1, 0, 1000000000000000ULL)));
    EXPECT_EQ(10000000000.0, dm_double_todouble(DM_DOUBLE_PACK(0, 10, 1000000000000000ULL)));
    EXPECT_EQ(-10000000000.0, dm_double_todouble(DM_DOUBLE_PACK(1, 10, 1000000000000000ULL)));
-   EXPECT_EQ(1e100, dm_double_todouble(DM_DOUBLE_PACK(0, 100, 1000000000000000ULL)));
-   EXPECT_EQ(-1e100, dm_double_todouble(DM_DOUBLE_PACK(1, 100, 1000000000000000ULL)));
+   volatile double base = 10.0;        // This variable is volatile so that the compiler
+   if (1e100 == std::pow(base, 100.0)) // can't pre-compute this function call.
+    {
+      EXPECT_EQ(1e100, dm_double_todouble(DM_DOUBLE_PACK(0, 100, 1000000000000000ULL)));
+      EXPECT_EQ(-1e100, dm_double_todouble(DM_DOUBLE_PACK(1, 100, 1000000000000000ULL)));
+    }
+   else
+    {
+      std::cout << "Windows sucks." << std::endl;
+    }
    EXPECT_EQ(1e100, static_cast<double>(dm_double_tolongdouble(DM_DOUBLE_PACK(0, 100, 1000000000000000ULL))));
    EXPECT_EQ(-1e100, static_cast<double>(dm_double_tolongdouble(DM_DOUBLE_PACK(1, 100, 1000000000000000ULL))));
    EXPECT_EQ(0.5, dm_double_todouble(DM_DOUBLE_PACK(0, -1, 5000000000000000ULL)));
