@@ -1629,6 +1629,9 @@ TEST(DMDoubleTest, testRounds)
    EXPECT_EQ(positiveOne, dm_double_round(DM_DOUBLE_PACK(0, -1, 5000000000000000ULL)));
    EXPECT_EQ(positiveOne, dm_double_round(DM_DOUBLE_PACK(0, -1, 7000000000000000ULL)));
 
+      // BUG CASE
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 15, 1000000000000000ULL), dm_double_round(DM_DOUBLE_PACK(0, 15, 1000000000000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 15, 1000000000000001ULL), dm_double_roundeven(DM_DOUBLE_PACK(0, 15, 1000000000000001ULL)));
 
    EXPECT_EQ(positiveZero, dm_double_roundeven(positiveZero));
    EXPECT_EQ(positiveOne, dm_double_roundeven(positiveOne));

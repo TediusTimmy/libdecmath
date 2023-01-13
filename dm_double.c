@@ -446,7 +446,7 @@ dm_double dm_double_round(dm_double arg)
    uint64_t shift = makeShift[CUTOFF - exponent];
    uint64_t residue = significand % shift;
    significand /= shift;
-   if ((shift >> 1) <= residue) ++significand;
+   if (shift <= (residue << 1)) ++significand;
    significand *= shift;
    if (BIAS == significand)
     {
@@ -469,8 +469,8 @@ dm_double dm_double_roundeven(dm_double arg)
    uint64_t shift = makeShift[CUTOFF - exponent];
    uint64_t residue = significand % shift;
    significand /= shift;
-   if ((shift >> 1) < residue) ++significand;
-   else if (((shift >> 1) == residue) && (significand & 1)) ++significand; // Round halfway cases to even
+   if (shift < (residue << 1)) ++significand;
+   else if ((shift == (residue << 1)) && (significand & 1)) ++significand; // Round halfway cases to even
    significand *= shift;
    if (BIAS == significand)
     {
