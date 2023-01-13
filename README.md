@@ -20,6 +20,8 @@ Note that it is a royal pain to debug code when the compiler doesn't understand 
 MISRA version
 -------------
 
-The dm_double_m version has had the MISRA C standard applied to it. Currently, the only violation is that it uses the stdio.h function sprintf. I will get rid of that soon. I should also see how the cyclomatic complexity changed, as I find the new functions to be slightly less readable.
+The dm_double_m version has had the MISRA C standard applied to it. I should see how the cyclomatic complexity changed, as I find the new functions to be slightly less readable.
 
 Of note is that, as MISRA doesn't like right-shifting a signed number, the exponent is now stored as a biased number also. And, if I was doing that, I could move the sign. This version is binary incompatible with the other version. However, now all bits set to zero is the number zero, numbers can be sorted using integer compares, and the sign bit is the sign bit.
+
+Also note that printing a non-canonical number results in a leading "10" in the old code and a leading "0" in the MISRA version.

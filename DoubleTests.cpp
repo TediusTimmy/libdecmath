@@ -2028,6 +2028,18 @@ TEST(DMDoubleTest, testStringConversions)
    EXPECT_STREQ("1.234567890123456e-511", dest);
    dm_double_tostring(DM_DOUBLE_PACK(1, 511, 1234567890123456ULL), dest);
    EXPECT_STREQ("-1.234567890123456e+511", dest);
+
+   dm_double_tostring(DM_DOUBLE_PACK(0, -82, 1234567890123456ULL), dest);
+   EXPECT_STREQ("1.234567890123456e-82", dest);
+   dm_double_tostring(DM_DOUBLE_PACK(1, 82, 1234567890123456ULL), dest);
+   EXPECT_STREQ("-1.234567890123456e+82", dest);
+
+   dm_double_tostring(DM_DOUBLE_PACK(0, 90, 10000000123456789ULL), dest);
+#ifndef MISRAbleC
+   EXPECT_STREQ("10.000000123456789e+90", dest);
+#else /* MISRAbleC version */
+   EXPECT_STREQ( "0.000000123456789e+90", dest);
+#endif /* MISRAbleC */
  }
 
 TEST(DMDoubleTest, testDoubleConversions)

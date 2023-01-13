@@ -30,7 +30,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
 #include <ctype.h>
 #include <inttypes.h>
 
@@ -1400,37 +1399,97 @@ dm_double dm_double_div_r(dm_double lhs, dm_double rhs, int round_mode)
    return result;
  }
 
-int dm_double_tostring(dm_double arg, char dest [25])
+void dm_double_tostring(dm_double arg, char dest [24])
  {
-   int result;
    int sign = dm_double_signbit(arg);
    uint64_t significand = DM_DOUBLE_UNPACK_SIGNIFICAND(arg);
    int exponent = DM_DOUBLE_UNPACK_EXPONENT(arg);
 
    if (!!dm_double_isnan(arg))
     {
-      result = sprintf(dest, "%sNaN", sign ? "-" : "");
+      if (!!sign)
+       {
+         dest[0] = '-';
+       }
+      dest[sign + 0] = 'N';
+      dest[sign + 1] = 'a';
+      dest[sign + 2] = 'N';
+      dest[sign + 3] = '\0';
     }
    else if (!!dm_double_isinf(arg))
     {
-      result = sprintf(dest, "%sInf", sign ? "-" : "");
-    }
-   else if (!!dm_double_iszero(arg))
-    {
-      result = sprintf(dest, "%s0.000000000000000e+0", sign ? "-" : "");
+      if (!!sign)
+       {
+         dest[0] = '-';
+       }
+      dest[sign + 0] = 'I';
+      dest[sign + 1] = 'n';
+      dest[sign + 2] = 'f';
+      dest[sign + 3] = '\0';
     }
    else
     {
+      if (!!dm_double_iszero(arg))
+       {
+         exponent = 0;
+         significand = 0U;
+       }
       uint64_t digit = significand / MIN_SIGNIFICAND;
-      int64_t first = (int64_t)digit;
+      if (10U == digit)
+       {
+         digit = 0U;
+       }
       uint64_t rest = significand % MIN_SIGNIFICAND;
+
       if (!!sign)
        {
-         first = -first;
+         dest[0] = '-';
        }
-      result = sprintf(dest, "%" PRId64 ".%015" PRIu64 "e%+d", first, rest, exponent);
+      int first = (int)digit;
+      dest[sign + 0] = '0' + first;
+      dest[sign + 1] = '.';
+      for (int i = 14; i >= 0; --i)
+       {
+         uint64_t next = rest % 10U;
+         int dig = (int)next;
+         rest = rest / 10U;
+         dest[sign + 2 + i] = '0' + dig;
+       }
+      dest[sign + 17] = 'e';
+      if (exponent >= 0)
+       {
+         dest[sign + 18] = '+';
+       }
+      else
+       {
+         dest[sign + 18] = '-';
+         exponent = -exponent;
+       }
+      if (exponent > 99)
+       {
+         int next = exponent % 10;
+         exponent = exponent / 10;
+         dest[sign + 21] = '0' + next;
+         next = exponent % 10;
+         exponent = exponent / 10;
+         dest[sign + 20] = '0' + next;
+         dest[sign + 19] = '0' + exponent;
+         dest[sign + 22] = '\0';
+       }
+      else if (exponent > 9)
+       {
+         int next = exponent % 10;
+         exponent = exponent / 10;
+         dest[sign + 20] = '0' + next;
+         dest[sign + 19] = '0' + exponent;
+         dest[sign + 21] = '\0';
+       }
+      else
+       {
+         dest[sign + 19] = '0' + exponent;
+         dest[sign + 20] = '\0';
+       }
     }
-   return result;
  }
 
 dm_double dm_double_fromstring(const char * arg)
