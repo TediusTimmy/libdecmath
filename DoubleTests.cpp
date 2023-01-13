@@ -33,6 +33,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cmath>
 
+#ifndef MISRAbleC
+
 #include "dm_double.h"
 #define DM_DOUBLE_PACK(sign, exponent, significand) ((((uint64_t)(exponent)) << 54) | ((significand) - MIN_SIGNIFICAND) | ((sign) ? SIGN_BIT : 0))
 #define DM_DOUBLE_PACK_ALT(sign, exponent, significand) ((((uint64_t)(exponent)) << 54) | (significand) | ((sign) ? SIGN_BIT : 0))
@@ -41,6 +43,19 @@ const int16_t SPECIAL_EXPONENT = -512;
 const uint64_t DM_INFINITY = 0x1FFFFFFFFFFFFFULL;
 const uint64_t SIGN_BIT = 0x20000000000000ULL;
 const uint64_t MIN_SIGNIFICAND = 1000000000000000ULL;
+
+#else /* The MISRAbleC version */
+
+#include "dm_double_m.h"
+#define DM_DOUBLE_PACK(sign, exponent, significand) ((((uint64_t)(exponent - SPECIAL_EXPONENT)) << 53) | ((significand) - MIN_SIGNIFICAND) | ((sign) ? SIGN_BIT : 0))
+#define DM_DOUBLE_PACK_ALT(sign, exponent, significand) ((((uint64_t)(exponent - SPECIAL_EXPONENT)) << 53) | (significand) | ((sign) ? SIGN_BIT : 0))
+
+const int16_t SPECIAL_EXPONENT = -512;
+const uint64_t DM_INFINITY = 0x1FFFFFFFFFFFFFULL;
+const uint64_t SIGN_BIT =  0x8000000000000000ULL;
+const uint64_t MIN_SIGNIFICAND = 1000000000000000ULL;
+
+#endif /* MISRAbleC */
 
 TEST(DMDoubleTest, testComparisons) // It was super easy to copy and modify this code from the SlowFloat tests
  {
@@ -1123,240 +1138,247 @@ TEST(DMDoubleTest, testComparisons) // It was super easy to copy and modify this
 TEST(DMDoubleTest, testRounding) // Is this OVERKILL? Maybe.
  {
    // Odd breaks the mold because I flipped the sense between SlowFloat and here.
+#ifndef MISRAbleC
+   const int T = 1;
+   const int F = 0;
+#else /* MISRAbleC version */
+   const unsigned int T = 1U;
+   const unsigned int F = 0U;
+#endif /* MISRAbleC */
 
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(1, 1, 0, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(1, 1, 0, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(0, 1, 0, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(0, 1, 0, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 0, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 1, DM_FE_TONEAREST));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 0, DM_FE_TONEAREST));
-
-
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 0, 0, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 0, 0, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 1, 0, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 1, 0, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 0, 0, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 0, 0, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 1, 0, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 1, 0, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 0, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 1, DM_FE_TONEARESTFROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(1, 1, 0, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(1, 1, 0, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(0, 1, 0, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(0, 1, 0, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 0, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 1, DM_FE_TONEAREST));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 0, DM_FE_TONEAREST));
 
 
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 1, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 1, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 1, DM_FE_UPWARD));
-   EXPECT_EQ(1, dm_decideRound(0, 0, 1, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 1, DM_FE_UPWARD));
-   EXPECT_EQ(1, dm_decideRound(0, 1, 1, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 1, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 1, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 1, DM_FE_UPWARD));
-   EXPECT_EQ(1, dm_decideRound(0, 0, 0, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 1, DM_FE_UPWARD));
-   EXPECT_EQ(1, dm_decideRound(0, 1, 0, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 0, -1, 1, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 0, -1, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, -1, 1, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, -1, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, -1, 1, DM_FE_UPWARD));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 0, DM_FE_UPWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, -1, 1, DM_FE_UPWARD));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 0, 0, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 0, 0, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 1, 0, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 1, 0, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 0, 0, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 0, 0, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 1, 0, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 1, 0, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 0, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 1, DM_FE_TONEARESTFROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 0, DM_FE_TONEARESTFROMZERO));
 
 
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(1, dm_decideRound(1, 0, 1, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(1, dm_decideRound(1, 1, 1, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(1, dm_decideRound(1, 0, 0, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(1, dm_decideRound(1, 1, 0, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 0, -1, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, -1, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, -1, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, -1, 0, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, -1, 1, DM_FE_DOWNWARD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, -1, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 1, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 1, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 1, DM_FE_UPWARD));
+   EXPECT_EQ(T, dm_decideRound(0, 0, 1, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 1, DM_FE_UPWARD));
+   EXPECT_EQ(T, dm_decideRound(0, 1, 1, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 1, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 1, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 1, DM_FE_UPWARD));
+   EXPECT_EQ(T, dm_decideRound(0, 0, 0, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 1, DM_FE_UPWARD));
+   EXPECT_EQ(T, dm_decideRound(0, 1, 0, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, -1, 1, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, -1, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, -1, 1, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, -1, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, -1, 1, DM_FE_UPWARD));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 0, DM_FE_UPWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, -1, 1, DM_FE_UPWARD));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 0, DM_FE_UPWARD));
 
 
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, -1, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, -1, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, -1, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, -1, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, -1, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, -1, 0, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, -1, 1, DM_FE_TOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, -1, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(T, dm_decideRound(1, 0, 1, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(T, dm_decideRound(1, 1, 1, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(T, dm_decideRound(1, 0, 0, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(T, dm_decideRound(1, 1, 0, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, -1, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, -1, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, -1, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, -1, 0, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, -1, 1, DM_FE_DOWNWARD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, -1, 0, DM_FE_DOWNWARD));
 
 
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(1, 0, 0, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(1, 0, 0, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(0, 0, 0, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(0, 0, 0, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 0, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 1, DM_FE_TONEARESTODD));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, -1, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, -1, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, -1, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, -1, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, -1, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, -1, 0, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, -1, 1, DM_FE_TOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, -1, 0, DM_FE_TOWARDZERO));
 
 
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 0, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 1, DM_FE_TONEARESTTOWARDZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(1, 0, 0, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(1, 0, 0, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(0, 0, 0, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(0, 0, 0, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 0, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 1, DM_FE_TONEARESTODD));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 0, DM_FE_TONEARESTODD));
 
 
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 0, 1, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 1, 1, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 0, 1, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 1, 1, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 0, 0, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 1, 0, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 0, 0, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 1, 0, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 0, -1, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 0, -1, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(1, 1, -1, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(1, 1, -1, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 0, -1, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 0, -1, 0, DM_FE_FROMZERO));
-   EXPECT_EQ(0, dm_decideRound(0, 1, -1, 1, DM_FE_FROMZERO));
-   EXPECT_EQ(1, dm_decideRound(0, 1, -1, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 0, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 1, DM_FE_TONEARESTTOWARDZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 0, DM_FE_TONEARESTTOWARDZERO));
+
+
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 0, 1, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 1, 1, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 0, 1, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 1, 1, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 0, 0, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 1, 0, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 0, 0, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 1, 0, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 0, -1, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 0, -1, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(1, 1, -1, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(1, 1, -1, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 0, -1, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 0, -1, 0, DM_FE_FROMZERO));
+   EXPECT_EQ(F, dm_decideRound(0, 1, -1, 1, DM_FE_FROMZERO));
+   EXPECT_EQ(T, dm_decideRound(0, 1, -1, 0, DM_FE_FROMZERO));
 
 
       // Invalid mode should behave like DM_FE_TOWARDZERO
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 1, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 1, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 1, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 1, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 0, 0, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 1, 0, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 0, 0, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 1, 0, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 0, -1, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 0, -1, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 1, -1, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(1, 1, -1, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 0, -1, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 0, -1, 0, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 1, -1, 1, 42));
-   EXPECT_EQ(0, dm_decideRound(0, 1, -1, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 1, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 1, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 1, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 1, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 0, 0, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 1, 0, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 0, 0, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 1, 0, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 0, -1, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 0, -1, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 1, -1, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(1, 1, -1, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 0, -1, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 0, -1, 0, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 1, -1, 1, 42));
+   EXPECT_EQ(F, dm_decideRound(0, 1, -1, 0, 42));
  }
 
 TEST(DMDoubleTest, testClassifiers)
@@ -2012,7 +2034,11 @@ TEST(DMDoubleTest, testDoubleConversions)
  {
    EXPECT_EQ(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 0U), dm_double_fromdouble(0.0));
    EXPECT_EQ(DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 0U), dm_double_fromdouble(-0.0));
+#ifndef MISRAbleC
    EXPECT_EQ(0U, dm_double_fromdouble(1.0)); // The Boulder is conflicted....
+#else /* MISRAbleC version */
+   EXPECT_EQ(0U, dm_double_fromdouble(0.0)); // The Boulder is unconflicted.
+#endif /* MISRAbleC */
    EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000000000ULL), dm_double_fromdouble(1.0));
    EXPECT_EQ(DM_DOUBLE_PACK(1, 0, 1000000000000000ULL), dm_double_fromdouble(-1.0));
    EXPECT_EQ(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, DM_INFINITY), dm_double_fromdouble(std::pow(10.0, 10000.0)));
@@ -2129,7 +2155,11 @@ TEST(DMDoubleTest, testLongDoubleConversions)
  {
    EXPECT_EQ(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 0U), dm_double_fromlongdouble(0.0L));
    EXPECT_EQ(DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 0U), dm_double_fromlongdouble(-0.0L));
+#ifndef MISRAbleC
    EXPECT_EQ(0U, dm_double_fromlongdouble(1.0L)); // The Boulder is conflicted....
+#else /* MISRAbleC version */
+   EXPECT_EQ(0U, dm_double_fromlongdouble(0.0L)); // The Boulder is unconflicted.
+#endif /* MISRAbleC */
    EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000000000ULL), dm_double_fromlongdouble(1.0L));
    EXPECT_EQ(DM_DOUBLE_PACK(1, 0, 1000000000000000ULL), dm_double_fromlongdouble(-1.0L));
    EXPECT_EQ(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, DM_INFINITY), dm_double_fromlongdouble(std::pow(10.0L, 10000.0L)));
