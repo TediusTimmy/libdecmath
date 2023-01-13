@@ -130,7 +130,7 @@ dm_double dm_double_mul_r (dm_double, dm_double, int);
 dm_double dm_double_div_r (dm_double, dm_double, int);
 
 
-void        dm_double_tostring       (dm_double, char [25]); // 23? 9.999999999999999e-511\0  Its 25 because GCC will whine.
+void        dm_double_tostring       (dm_double, char [25]); // 25? -9.999999999999999e-511\0   Also, the "first digit" could be 10.
 dm_double   dm_double_fromstring     (const char *);
 #ifndef DM_NO_DOUBLE_MATH
 double      dm_double_todouble       (dm_double);
