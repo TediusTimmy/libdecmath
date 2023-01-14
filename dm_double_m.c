@@ -32,10 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ctype.h>
 #include <inttypes.h>
-
-#ifndef DM_NO_DOUBLE_MATH
-   #include <math.h>
-#endif /* DM_NO_DOUBLE_MATH */
+#include <math.h> // Needed for constants such as FP_NORMAL
 
 #include "dm_double_m.h"
 #include "dm_muldiv.h"
