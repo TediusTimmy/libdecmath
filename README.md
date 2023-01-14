@@ -20,7 +20,7 @@ Note that it is a royal pain to debug code when the compiler doesn't understand 
 MISRA version
 -------------
 
-The dm_double_m version has had the MISRA C standard applied to it. While I find the new functions to be slightly less readable, with the exception of dm_double_fpclassify, which has lower complexity, pretty much every function has the same complexity whether we return early or not. The only other function with a different complexity is dm_double_fromstring, and it is a different function entirely.
+The dm_double_m version has had the MISRA C standard applied to it. While I find the new functions to be slightly less readable, with the exception of dm_double_fpclassify, which has lower complexity, pretty much every function has the same complexity whether we return early or not. The only other function with a different complexity is dm_double_fromstring, and it is a different function entirely. However, the maintainability index of the MISRA version is lower. Fun times with useless metrics.
 
 Of note is that, as MISRA doesn't like right-shifting a signed number, the exponent is now stored as a biased number also. And, if I was doing that, I could move the sign. This version is binary incompatible with the other version. However, now all bits set to zero is the number zero, numbers can be sorted using integer compares, and the sign bit is the sign bit.
 
