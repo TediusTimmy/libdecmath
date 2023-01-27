@@ -130,7 +130,7 @@ int dm_double_isfinite(dm_double arg)
 
 int dm_double_isinf(dm_double arg)
  {
-   return FP_INFINITE == dm_double_fpclassify(arg);
+   return DM_INFINITY == (arg & ~SIGN_BIT);
  }
 
 int dm_double_isnan(dm_double arg)
@@ -156,7 +156,7 @@ int dm_double_issubnormal(dm_double arg)
 
 int dm_double_iszero(dm_double arg)
  {
-   return FP_ZERO == dm_double_fpclassify(arg);
+   return 0U == (arg & ~SIGN_BIT);
  }
 
  /* It is tempting to use the sign bit as the "signaling" bit,
