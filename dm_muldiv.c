@@ -298,81 +298,6 @@ void dm_muldiv_divBy(dm_muldiv_t lhs, uint64_t rhs, uint64_t* quo, uint64_t* rem
 #endif /* DM_NO_128_BIT_TYPE */
  }
 
-void dm_muldiv_extract(dm_muldiv_t source, uint64_t* dest)
- {
-#ifndef DM_NO_128_BIT_TYPE
-   *dest = *source;
-#else // DM_NO_128_BIT_TYPE
-   *dest = (((uint64_t)source[1]) << 32U) | source[0];
-#endif
- }
-
-
-void dm_muldiv_add(dm_muldiv_t dest, dm_muldiv_t lhs, dm_muldiv_t rhs) // dest may alias lhs or rhs.
- {
-#ifndef DM_NO_128_BIT_TYPE
-   *dest = *lhs + *rhs;
-#else // DM_NO_128_BIT_TYPE
-   uint64_t temp = ((uint64_t)lhs[0]) + rhs[0];
-   dest[0] = temp;
-   temp >>= 32U;
-   temp = temp + lhs[1] + rhs[1];
-   dest[1] = temp;
-   temp >>= 32U;
-   temp = temp + lhs[2] + rhs[2];
-   dest[2] = temp;
-   temp >>= 32U;
-   temp = temp + lhs[3] + rhs[3];
-   dest[3] = temp;
-#endif
- }
-
-void dm_muldiv_sub(dm_muldiv_t dest, dm_muldiv_t lhs, dm_muldiv_t rhs) // dest may alias lhs or rhs.
- {
-#ifndef DM_NO_128_BIT_TYPE
-   *dest = *lhs - *rhs;
-#else // DM_NO_128_BIT_TYPE
-   uint64_t temp = ((uint64_t)lhs[0]) - rhs[0];
-   dest[0] = temp;
-   temp >>= 32U;
-   temp = ((uint64_t)lhs[1]) - rhs[1] - (temp & 1U);
-   dest[1] = temp;
-   temp >>= 32U;
-   temp = ((uint64_t)lhs[2]) - rhs[2] - (temp & 1U);
-   dest[2] = temp;
-   temp >>= 32U;
-   temp = ((uint64_t)lhs[3]) - rhs[3] - (temp & 1U);
-   dest[3] = temp;
-#endif
- }
-
-int dm_muldiv_zero(dm_muldiv_t arg)
- {
-#ifndef DM_NO_128_BIT_TYPE
-   return 0U == *arg;
-#else // DM_NO_128_BIT_TYPE
-   return 0U == (arg[0] | arg[1] | arg[2] | arg[3]);
-#endif
- }
-
-int dm_muldiv_greater(dm_muldiv_t lhs, uint64_t rhs)
- {
-#ifndef DM_NO_128_BIT_TYPE
-   return *lhs > rhs;
-#else // DM_NO_128_BIT_TYPE
-   int result;
-   if (0U != (lhs[2] | lhs[3]))
-    {
-      result = 1;
-    }
-   else
-    {
-      result = ((((uint64_t)lhs[1]) << 32U) | lhs[0]) > rhs;
-    }
-   return result;
-#endif
- }
-
 int dm_muldiv_less(dm_muldiv_t lhs, dm_muldiv_t rhs)
  {
 #ifndef DM_NO_128_BIT_TYPE
@@ -398,3 +323,47 @@ int dm_muldiv_less(dm_muldiv_t lhs, dm_muldiv_t rhs)
    return result;
 #endif
  }
+
+#ifdef DM_NO_128_BIT_TYPE
+void dm_muldiv_extract(dm_muldiv_t source, uint64_t* dest)
+ {
+   *dest = (((uint64_t)source[1]) << 32U) | source[0];
+ }
+
+void dm_muldiv_sub(dm_muldiv_t dest, dm_muldiv_t lhs, dm_muldiv_t rhs) // dest may alias lhs or rhs.
+ {
+   uint64_t temp = ((uint64_t)lhs[0]) - rhs[0];
+   dest[0] = temp;
+   temp >>= 32U;
+   temp = ((uint64_t)lhs[1]) - rhs[1] - (temp & 1U);
+   dest[1] = temp;
+   temp >>= 32U;
+   temp = ((uint64_t)lhs[2]) - rhs[2] - (temp & 1U);
+   dest[2] = temp;
+   temp >>= 32U;
+   temp = ((uint64_t)lhs[3]) - rhs[3] - (temp & 1U);
+   dest[3] = temp;
+ }
+
+#ifdef DM_USE_SLOW_BINARY
+void dm_muldiv_add(dm_muldiv_t dest, dm_muldiv_t lhs, dm_muldiv_t rhs) // dest may alias lhs or rhs.
+ {
+   uint64_t temp = ((uint64_t)lhs[0]) + rhs[0];
+   dest[0] = temp;
+   temp >>= 32U;
+   temp = temp + lhs[1] + rhs[1];
+   dest[1] = temp;
+   temp >>= 32U;
+   temp = temp + lhs[2] + rhs[2];
+   dest[2] = temp;
+   temp >>= 32U;
+   temp = temp + lhs[3] + rhs[3];
+   dest[3] = temp;
+ }
+
+int dm_muldiv_zero(dm_muldiv_t arg)
+ {
+   return 0U == (arg[0] | arg[1] | arg[2] | arg[3]);
+ }
+#endif /* DM_USE_SLOW_BINARY */
+#endif /* DM_NO_128_BIT_TYPE */

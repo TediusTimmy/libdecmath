@@ -962,10 +962,8 @@ dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
    else
     {
          // Now, we can start the add proper!
-      dm_muldiv_t lhd;
-      dm_muldiv_loadFrom(lhd, DM_DOUBLE_UNPACK_SIGNIFICAND(lhs));
-      dm_muldiv_t rhd;
-      dm_muldiv_loadFrom(rhd, DM_DOUBLE_UNPACK_SIGNIFICAND(rhs));
+      uint64_t lhd = DM_DOUBLE_UNPACK_SIGNIFICAND(lhs);
+      uint64_t rhd = DM_DOUBLE_UNPACK_SIGNIFICAND(rhs);
       uint64_t resultSignificand;
 
          // Normalize exponents
@@ -975,31 +973,53 @@ dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
       int16_t expDiff = 0;
       if (lhse > rhse)
        {
-         if ((lhse - rhse) <= CUTOFF)
+         if ((lhse - rhse) <= (CUTOFF + 1))
           {
             expDiff = lhse - rhse;
-            dm_muldiv_mulBy(lhd, makeShift[expDiff + 1]);
+            if (expDiff > 2) // 2 : guard digit, rounding digit / sticky digit
+             {
+               uint64_t removed;
+               removed = rhd % makeShift[(expDiff - 2) + 1];
+               rhd /= makeShift[(expDiff - 2) + 1];
+               if ((0U != removed) && ((0U == (rhd % 10U)) || (5U == (rhd % 10U))))
+                {
+                  ++rhd;
+                }
+               expDiff = 2;
+             }
+            lhd *= makeShift[expDiff + 1];
           }
          else
           {
             expDiff = 2;
-            dm_muldiv_mulBy(lhd, 100U);
-            dm_muldiv_loadFrom(rhd, 1U);
+            lhd *= 100U;
+            rhd = 1U;
           }
        }
       else if (lhse < rhse)
        {
          resultExponent = rhse;
-         if ((rhse - lhse) <= CUTOFF)
+         if ((rhse - lhse) <= (CUTOFF + 1))
           {
             expDiff = rhse - lhse;
-            dm_muldiv_mulBy(rhd, makeShift[expDiff + 1]);
+            if (expDiff > 2)
+             {
+               uint64_t removed;
+               removed = lhd % makeShift[(expDiff - 2) + 1];
+               lhd /= makeShift[(expDiff - 2) + 1];
+               if ((0U != removed) && ((0U == (lhd % 10U)) || (5U == (lhd % 10U))))
+                {
+                  ++lhd;
+                }
+               expDiff = 2;
+             }
+            rhd *= makeShift[expDiff + 1];
           }
          else
           {
             expDiff = 2;
-            dm_muldiv_mulBy(rhd, 100U);
-            dm_muldiv_loadFrom(lhd, 1U);
+            rhd *= 100U;
+            lhd = 1U;
           }
        }
       else
@@ -1011,24 +1031,24 @@ dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
       int resultSign = dm_double_signbit(lhs);
       if (dm_double_signbit(lhs) == dm_double_signbit(rhs)) // Both same sign
        {
-         dm_muldiv_add(lhd, lhd, rhd);
+         lhd += rhd;
        }
       else // Different Signs
        {
-         if (!dm_muldiv_less(lhd, rhd)) // lhd >= rhd, lhs larger : result sign of lhs
+         if (lhd >= rhd) // lhd >= rhd, lhs larger : result sign of lhs
           {
-            dm_muldiv_sub(lhd, lhd, rhd);
+            lhd -= rhd;
           }
          else // rhs larger : result sign of rhs (opposite sign of lhs)
           {
-            dm_muldiv_sub(lhd, rhd, lhd);
+            lhd = rhd - lhd;
             resultSign = !resultSign;
           }
        }
-      dm_muldiv_extract(lhd, &resultSignificand);
+      resultSignificand = lhd;
 
          // Normalize the result
-      if (!!dm_muldiv_zero(lhd))
+      if (0U == lhd)
        {
          if (DM_FE_DOWNWARD != round_mode)
           {
@@ -1041,32 +1061,31 @@ dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
          resultExponent = SPECIAL_EXPONENT;
          resultSignificand = MIN_SIGNIFICAND;
        }
-      else if (!!dm_muldiv_greater(lhd, MAX_SIGNIFICAND))
+      else if (lhd > MAX_SIGNIFICAND)
        {
          if (0 == expDiff) // Did overflow occur? ie 9 + 9
           {
             ++resultExponent;
           }
          uint64_t temp = makeShift[expDiff]; // This is why the table has one extra entry: we want the previous entry here.
-         dm_muldiv_t test;
-         dm_muldiv_loadFrom(test, BIAS);
-         dm_muldiv_mulBy(test, makeShift[expDiff]);
-         if (!!dm_muldiv_less(lhd, test)) // Did destructive cancellation occur? ie 100 - 1.
+         uint64_t test = BIAS * makeShift[expDiff];
+         if (lhd < test) // Did destructive cancellation occur? ie 100 - 1.
           {
             --resultExponent;
           }
          else
           {
-            temp *= 10;
-            dm_muldiv_mulBy(test, 10U);
-            if (!dm_muldiv_less(lhd, test)) // Is lhd >= test : did overflow occur? ie 99 + 1
+            temp *= 10U;
+            test *= 10U;
+            if (lhd >= test) // Did overflow occur? ie 99 + 1
              {
                ++resultExponent;
                temp *= 10U;
              }
           }
          uint64_t rem;
-         dm_muldiv_divBy(lhd, temp, &resultSignificand, &rem);
+         resultSignificand = lhd / temp;
+         rem = lhd % temp;
          resultSignificand += dm_decideRound(resultSign, resultSignificand & 1U, (int64_t)temp - (int64_t)(rem << 1), 0U == rem, round_mode);
          if (resultSignificand == BIAS)
           {
@@ -1083,7 +1102,7 @@ dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
        {
          while (resultSignificand < MIN_SIGNIFICAND)
           {
-            resultSignificand *= 10;
+            resultSignificand *= 10U;
             --resultExponent;
           }
          if (resultExponent < MIN_EXPONENT) // Flush to zero?
