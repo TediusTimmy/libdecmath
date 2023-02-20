@@ -2563,3 +2563,49 @@ TEST(DMDoubleTest, testLongDoubleConversions)
    EXPECT_EQ(DM_DOUBLE_PACK(0,  19, 1000000000000000ULL), dm_double_fromlongdouble( 1e19L));
    EXPECT_EQ(DM_DOUBLE_PACK(0,  20, 1000000000000000ULL), dm_double_fromlongdouble( 1e20L));
  }
+
+TEST(DMDoubleTest, testFmod)
+ {
+   dm_double positiveZero = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 0U); // Special exponent, zero significand : zero
+   dm_double negativeZero = DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 0U);
+   dm_double positiveOne  = DM_DOUBLE_PACK(0, 0, 1000000000000000ULL);
+   dm_double negativeOne  = DM_DOUBLE_PACK(1, 0, 1000000000000000ULL);
+   dm_double positiveInf  = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, DM_INFINITY); // Special exponent, ones significand : infinity
+   dm_double negativeInf  = DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, DM_INFINITY);
+   dm_double nan1         = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 1U); // Special exponent, any other significand : NaN
+   dm_double nan2         = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 2U);
+   dm_double nan255       = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 255U);
+   dm_double nnan255      = DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 255U);
+
+      // Nans
+   EXPECT_EQ(nan1, dm_double_fmod(nan1, positiveOne));
+   EXPECT_EQ(nan1, dm_double_fmod(positiveOne, nan1));
+   EXPECT_EQ(nan2, dm_double_fmod(nan2, nan1));
+
+      // Inf % x = Nan, x % 0 = Nan
+   EXPECT_EQ(nan255, dm_double_fmod(positiveInf, positiveOne));
+   EXPECT_EQ(nnan255, dm_double_fmod(negativeInf, positiveOne));
+   EXPECT_EQ(nan255, dm_double_fmod(positiveOne, positiveZero)); // Sign is sign of lhs.
+   EXPECT_EQ(nnan255, dm_double_fmod(negativeOne, positiveZero));
+   EXPECT_EQ(nan255, dm_double_fmod(positiveOne, negativeZero));
+   EXPECT_EQ(nnan255, dm_double_fmod(negativeOne, negativeZero));
+
+      // Return Argument
+   EXPECT_EQ(positiveOne, dm_double_fmod(positiveOne, positiveInf));
+   EXPECT_EQ(positiveOne, dm_double_fmod(positiveOne, negativeInf));
+   EXPECT_EQ(negativeOne, dm_double_fmod(negativeOne, positiveInf));
+   EXPECT_EQ(negativeOne, dm_double_fmod(negativeOne, negativeInf));
+   EXPECT_EQ(positiveZero, dm_double_fmod(positiveZero, positiveOne));
+   EXPECT_EQ(positiveZero, dm_double_fmod(positiveZero, negativeOne));
+   EXPECT_EQ(negativeZero, dm_double_fmod(negativeZero, positiveOne));
+   EXPECT_EQ(negativeZero, dm_double_fmod(negativeZero, negativeOne));
+
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 3000000000000000ULL), dm_double_fmod(DM_DOUBLE_PACK(0, 0, 7000000000000000ULL), DM_DOUBLE_PACK(0, 0, 4000000000000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(1, 0, 3000000000000000ULL), dm_double_fmod(DM_DOUBLE_PACK(1, 0, 7000000000000000ULL), DM_DOUBLE_PACK(0, 0, 4000000000000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 2000000000000000ULL), dm_double_fmod(DM_DOUBLE_PACK(0, 1, 7000000000000000ULL), DM_DOUBLE_PACK(0, 0, 4000000000000000ULL)));
+   EXPECT_EQ(positiveZero, dm_double_fmod(DM_DOUBLE_PACK(0, 1, 6800000000000000ULL), DM_DOUBLE_PACK(0, 0, 4000000000000000ULL)));
+   EXPECT_EQ(negativeZero, dm_double_fmod(DM_DOUBLE_PACK(1, 1, 6800000000000000ULL), DM_DOUBLE_PACK(0, 0, 4000000000000000ULL)));
+   EXPECT_EQ(positiveZero, dm_double_fmod(DM_DOUBLE_PACK(0, 2, 6800000000000000ULL), DM_DOUBLE_PACK(0, 0, 4000000000000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, -15, 1000000000000000ULL), dm_double_fmod(DM_DOUBLE_PACK(0, 0, 8000000000000001ULL), DM_DOUBLE_PACK(0, 0, 4000000000000000ULL)));
+   EXPECT_EQ(positiveZero, dm_double_fmod(DM_DOUBLE_PACK(0, -500, 8000000000000001ULL), DM_DOUBLE_PACK(0, -500, 4000000000000000ULL)));
+ }

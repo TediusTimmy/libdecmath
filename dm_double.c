@@ -872,6 +872,70 @@ dm_double dm_double_div_r(dm_double lhs, dm_double rhs, int round_mode)
    return DM_DOUBLE_PACK(resultSign, resultExponent, resultSignificand);
  }
 
+dm_double dm_double_fmod(dm_double lhs, dm_double rhs)
+ {
+   int resultSign = dm_double_signbit(lhs);
+
+      // First, handle NaNs, as they have the highest precedence.
+   if (dm_double_isnan(lhs)) return lhs; // Prefer lhs NaN's payload.
+   if (dm_double_isnan(rhs)) return rhs;
+
+      // Then, check if the result is NaN.
+   if (dm_double_isinf(lhs) || dm_double_iszero(rhs))
+    {
+      if (resultSign) return dm_double_neg(dm_double_NaN);
+      return dm_double_NaN;
+    }
+
+      // Finally, if the result is the lhs argument.
+   if (dm_double_iszero(lhs) || dm_double_isinf(rhs))
+    {
+      return lhs;
+    }
+
+      // Working variables
+   uint64_t resultSignificand = DM_DOUBLE_UNPACK_SIGNIFICAND(lhs);
+   uint64_t rhd = DM_DOUBLE_UNPACK_SIGNIFICAND(rhs);
+   int32_t resultExponent = DM_DOUBLE_UNPACK_EXPONENT(rhs);
+   int32_t expDiff = DM_DOUBLE_UNPACK_EXPONENT(lhs) - resultExponent;
+
+      // Shift-subtract loop to compute the remainder.
+   while ((expDiff >= 0) && (0U != resultSignificand))
+    {
+      while (resultSignificand >= rhd)
+       {
+         resultSignificand -= rhd;
+       }
+      --expDiff;
+      if (expDiff >= 0)
+       {
+         resultSignificand *= 10U;
+       }
+    }
+
+      // Normalize the result
+   if (0U == resultSignificand)
+    {
+      resultExponent = SPECIAL_EXPONENT;
+      resultSignificand = MIN_SIGNIFICAND;
+    }
+   else if (resultSignificand < MIN_SIGNIFICAND)
+    {
+      while (resultSignificand < MIN_SIGNIFICAND)
+       {
+         resultSignificand *= 10U;
+         --resultExponent;
+       }
+      if (resultExponent < MIN_EXPONENT) // Flush to zero?
+       {
+         resultSignificand = MIN_SIGNIFICAND;
+         resultExponent = SPECIAL_EXPONENT;
+       }
+    }
+
+   return DM_DOUBLE_PACK(resultSign, resultExponent, resultSignificand);
+ }
+
 void dm_double_tostring(dm_double arg, char dest [25])
  {
    int sign = dm_double_signbit(arg);
