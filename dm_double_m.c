@@ -1458,6 +1458,9 @@ dm_double dm_double_fmod(dm_double lhs, dm_double rhs)
       int32_t expDiff = DM_DOUBLE_UNPACK_EXPONENT(lhs) - resultExponent;
 
          // Shift-subtract loop to compute the remainder.
+         // This algorithm subtracts rhs shifted by 10 ^ x such that the result from subtraction is always exact.
+         // So, the remainder is EXACT, just as IEEE-754 says that it ought to be.
+         // Remember: we assume that the arguments are exact.
       while ((expDiff >= 0) && (0U != resultSignificand))
        {
          while (resultSignificand >= rhd)
