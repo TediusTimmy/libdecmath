@@ -53,7 +53,6 @@ void dm_muldiv_mulBy    (dm_muldiv_t, uint64_t);
 void dm_muldiv_divBy    (dm_muldiv_t, uint64_t, uint64_t*, uint64_t*);
 void dm_muldiv_extract  (dm_muldiv_t, uint64_t*);
 
-void dm_muldiv_add      (dm_muldiv_t, dm_muldiv_t, dm_muldiv_t);
 void dm_muldiv_sub      (dm_muldiv_t, dm_muldiv_t, dm_muldiv_t);
 
 int  dm_muldiv_zero     (dm_muldiv_t);

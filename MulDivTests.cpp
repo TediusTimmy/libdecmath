@@ -144,25 +144,25 @@ TEST(MulDivLibTest, testZero)
    EXPECT_EQ(1, dm_muldiv_less(a, b));
  }
 
-TEST(MulDivLibTest, testAddCarries)
+TEST(MulDivLibTest, testSubCarries)
  {
    dm_muldiv_t a;
-   a[3] = 0x00FF0000U;
-   a[2] = 0xFFFF0000U;
-   a[1] = 0xFFFF0000U;
-   a[0] = 0xFFFF0000U;
+   a[3] = 0x01FF0001U;
+   a[2] = 0x01FF0001U;
+   a[1] = 0x01FF0001U;
+   a[0] = 0x01FF0000U;
    dm_muldiv_t b;
    b[3] = 0x00FF0000U;
-   b[2] = 0xFFFF0000U;
-   b[1] = 0xFFFF0000U;
-   b[0] = 0xFFFF0000U;
+   b[2] = 0x80FF0000U;
+   b[1] = 0x80FF0000U;
+   b[0] = 0x80FF0000U;
 
-   dm_muldiv_add(a, a, b);
+   dm_muldiv_sub(a, a, b);
 
-   EXPECT_EQ(0x01FE0001U, a[3]);
-   EXPECT_EQ(0xFFFE0001U, a[2]);
-   EXPECT_EQ(0xFFFE0001U, a[1]);
-   EXPECT_EQ(0xFFFE0000U, a[0]);
+   EXPECT_EQ(0x01000000U, a[3]);
+   EXPECT_EQ(0x81000000U, a[2]);
+   EXPECT_EQ(0x81000000U, a[1]);
+   EXPECT_EQ(0x81000000U, a[0]);
  }
 
 TEST(MulDivLibTest, testEverHappens)

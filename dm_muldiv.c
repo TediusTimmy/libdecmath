@@ -182,35 +182,39 @@ void dm_muldiv_divBy(dm_muldiv_t lhs, uint64_t rhs, uint64_t* quo, uint64_t* rem
 #else // DM_NO_128_BIT_TYPE
 #ifdef DM_USE_SLOW_BINARY
    dm_muldiv_t d;
-   dm_muldiv_t m;
    dm_muldiv_t n;
-   dm_muldiv_t q;
+   uint64_t m;
+   uint64_t q;
    dm_muldiv_loadFrom(d, rhs);
-   dm_muldiv_loadFrom(m, 1U);
    dm_muldiv_copy(n, lhs);
-   dm_muldiv_loadFrom(q, 0U);
+   m = 1U;
+   q = 0U;
    while (0 != dm_muldiv_less(d, n))
     {
       dm_muldiv_shl1(d);
-      dm_muldiv_shl1(m);
+      m <<= 1;
+      if (0x8000000000000000ULL == m)
+       {
+         break;
+       }
     }
    if (0 != dm_muldiv_less(n, d))
     {
       dm_muldiv_shr1(d);
-      dm_muldiv_shr1(m);
+      m >>= 1;
     }
 
-   while (0 == dm_muldiv_zero(m))
+   while (0U != m)
     {
       dm_muldiv_sub(n, n, d);
-      dm_muldiv_add(q, q, m);
+      q += m;
       while (0 != dm_muldiv_less(n, d))
        {
          dm_muldiv_shr1(d);
-         dm_muldiv_shr1(m);
+         m >>= 1;
        }
     }
-   dm_muldiv_extract(q, quo);
+   *quo = q;
    dm_muldiv_extract(n, rem);
 #else /* Use faster word division */
    if (0U == (lhs[3] | lhs[2])) // Is this a degenerate case?
@@ -307,25 +311,6 @@ void dm_muldiv_extract(dm_muldiv_t source, uint64_t* dest)
 #endif
  }
 
-
-void dm_muldiv_add(dm_muldiv_t dest, dm_muldiv_t lhs, dm_muldiv_t rhs) // dest may alias lhs or rhs.
- {
-#ifndef DM_NO_128_BIT_TYPE
-   *dest = *lhs + *rhs;
-#else // DM_NO_128_BIT_TYPE
-   uint64_t temp = ((uint64_t)lhs[0]) + rhs[0];
-   dest[0] = temp;
-   temp >>= 32U;
-   temp = temp + lhs[1] + rhs[1];
-   dest[1] = temp;
-   temp >>= 32U;
-   temp = temp + lhs[2] + rhs[2];
-   dest[2] = temp;
-   temp >>= 32U;
-   temp = temp + lhs[3] + rhs[3];
-   dest[3] = temp;
-#endif
- }
 
 void dm_muldiv_sub(dm_muldiv_t dest, dm_muldiv_t lhs, dm_muldiv_t rhs) // dest may alias lhs or rhs.
  {
