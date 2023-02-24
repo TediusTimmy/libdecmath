@@ -2609,3 +2609,76 @@ TEST(DMDoubleTest, testFmod)
    EXPECT_EQ(DM_DOUBLE_PACK(0, -15, 1000000000000000ULL), dm_double_fmod(DM_DOUBLE_PACK(0, 0, 8000000000000001ULL), DM_DOUBLE_PACK(0, 0, 4000000000000000ULL)));
    EXPECT_EQ(positiveZero, dm_double_fmod(DM_DOUBLE_PACK(0, -500, 8000000000000001ULL), DM_DOUBLE_PACK(0, -500, 4000000000000000ULL)));
  }
+
+TEST(DMDoubleTest, testFMA)
+ {
+   dm_double positiveZero = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 0U);
+   dm_double negativeZero = DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 0U);
+   dm_double positiveOne  = DM_DOUBLE_PACK(0, 0, 1000000000000000ULL);
+   dm_double negativeOne  = DM_DOUBLE_PACK(1, 0, 1000000000000000ULL);
+   dm_double positiveTwo  = DM_DOUBLE_PACK(0, 0, 2000000000000000ULL);
+   dm_double positiveThr  = DM_DOUBLE_PACK(0, 0, 3000000000000000ULL);
+   dm_double positiveSix  = DM_DOUBLE_PACK(0, 0, 6000000000000000ULL);
+   dm_double positiveTen  = DM_DOUBLE_PACK(0, 1, 1000000000000000ULL);
+   dm_double negativeTen  = DM_DOUBLE_PACK(1, 1, 1000000000000000ULL);
+   dm_double positiveInf  = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, DM_INFINITY);
+   dm_double nan1         = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 1U);
+   dm_double nan2         = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 2U);
+   dm_double nan3         = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 3U);
+
+   EXPECT_EQ(nan1, dm_double_fma(nan1, nan2, nan3));
+   EXPECT_EQ(nan1, dm_double_fma(nan1, positiveOne, positiveOne));
+   EXPECT_EQ(nan2, dm_double_fma(positiveOne, nan2, nan3));
+   EXPECT_EQ(nan2, dm_double_fma(positiveOne, nan2, positiveOne));
+   EXPECT_EQ(nan3, dm_double_fma(positiveOne, positiveOne, nan3));
+
+   EXPECT_EQ(positiveOne, dm_double_fma(positiveZero, positiveTwo, positiveOne));
+   EXPECT_EQ(positiveThr, dm_double_fma(positiveTwo, positiveZero, positiveThr));
+   EXPECT_EQ(positiveSix, dm_double_fma(positiveTwo, positiveThr, positiveZero));
+
+   EXPECT_EQ(positiveInf, dm_double_fma(positiveInf, positiveOne, positiveOne));
+   EXPECT_EQ(positiveInf, dm_double_fma(positiveOne, positiveInf, positiveOne));
+   EXPECT_EQ(positiveInf, dm_double_fma(positiveOne, positiveOne, positiveInf));
+
+
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 1, 1200000000000000ULL), dm_double_fma(positiveTwo, positiveThr, positiveSix));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 8000000000000000ULL), dm_double_fma(positiveTwo, positiveOne, positiveSix));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 2, 1010000000000000ULL), dm_double_fma(positiveTen, positiveTen, positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 1, 9900000000000000ULL), dm_double_fma(positiveTen, positiveTen, negativeOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(1, 2, 1010000000000000ULL), dm_double_fma(positiveTen, negativeTen, negativeOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(1, 1, 9900000000000000ULL), dm_double_fma(positiveTen, negativeTen, positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 2, 1010000000000000ULL), dm_double_fma(positiveOne, positiveOne, DM_DOUBLE_PACK(0, 2, 1000000000000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 1, 9900000000000000ULL), dm_double_fma(positiveOne, negativeOne, DM_DOUBLE_PACK(0, 2, 1000000000000000ULL)));
+   EXPECT_EQ(positiveTen, dm_double_fma(DM_DOUBLE_PACK(0, 0, 9999999999999999ULL), positiveOne, DM_DOUBLE_PACK(0, -16, 9000000000000000ULL)));
+   EXPECT_EQ(positiveInf, dm_double_fma(DM_DOUBLE_PACK(0, 256, 1000000000000000ULL), DM_DOUBLE_PACK(0, 256, 1000000000000000ULL), DM_DOUBLE_PACK(0, 511, 1000000000000000ULL)));
+   EXPECT_EQ(positiveZero, dm_double_fma(DM_DOUBLE_PACK(0, -256, 1000000000000000ULL), DM_DOUBLE_PACK(1, -266, 9000000000000000ULL), DM_DOUBLE_PACK(0, -511, 1000000000000000ULL)));
+   EXPECT_EQ(positiveTen, dm_double_fma(positiveTen, positiveOne, DM_DOUBLE_PACK(0, -19, 1000000000000000ULL)));
+   EXPECT_EQ(positiveTen, dm_double_fma(DM_DOUBLE_PACK(0, -19, 1000000000000000ULL), positiveOne, positiveTen));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000100000ULL), dm_double_fma(positiveOne, positiveOne, DM_DOUBLE_PACK(0, -10, 1000000001000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000100000ULL), dm_double_fma(positiveOne, positiveOne, DM_DOUBLE_PACK(0, -10, 1000000401000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000100000ULL), dm_double_fma(positiveOne, positiveOne, DM_DOUBLE_PACK(0, -10, 1000000501000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000100000ULL), dm_double_fma(positiveOne, positiveOne, DM_DOUBLE_PACK(0, -10, 1000000601000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000100000ULL), dm_double_fma(positiveOne, DM_DOUBLE_PACK(0, -10, 1000000001000000ULL), positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000100000ULL), dm_double_fma(positiveOne, DM_DOUBLE_PACK(0, -10, 1000000401000000ULL), positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000100000ULL), dm_double_fma(positiveOne, DM_DOUBLE_PACK(0, -10, 1000000501000000ULL), positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 1000000000100000ULL), dm_double_fma(positiveOne, DM_DOUBLE_PACK(0, -10, 1000000601000000ULL), positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 1, 8200000000000000ULL), dm_double_fma(DM_DOUBLE_PACK(0, 0, 9000000000000000ULL), DM_DOUBLE_PACK(0, 0, 9000000000000000ULL), positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 2524157875323882ULL), dm_double_fma(DM_DOUBLE_PACK(0, 0, 1234567890123456ULL), DM_DOUBLE_PACK(0, 0, 1234567890123456ULL), positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 2524157875570795ULL), dm_double_fma(DM_DOUBLE_PACK(0, 0, 1234567890323456ULL), DM_DOUBLE_PACK(0, 0, 1234567890123456ULL), positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 0, 2524157875323876ULL), dm_double_fma(DM_DOUBLE_PACK(0, 0, 1234567890123452ULL), DM_DOUBLE_PACK(0, 0, 1234567890123455ULL), positiveOne));
+
+
+   EXPECT_EQ(positiveZero, dm_double_fma(positiveTen, negativeTen, DM_DOUBLE_PACK(0, 2, 1000000000000000ULL)));
+   dm_fesetround(DM_FE_DOWNWARD);
+   EXPECT_EQ(negativeZero, dm_double_fma(positiveTen, negativeTen, DM_DOUBLE_PACK(0, 2, 1000000000000000ULL)));
+   dm_fesetround(DM_FE_TONEAREST);
+   EXPECT_EQ(DM_DOUBLE_PACK(1, 0, 9000000000000000ULL), dm_double_fma(positiveOne, negativeTen, positiveOne));
+   EXPECT_EQ(DM_DOUBLE_PACK(1, 0, 9000000000000000ULL), dm_double_fma(positiveOne, positiveOne, negativeTen));
+   EXPECT_EQ(DM_DOUBLE_PACK(0, 1, 1900000000000000ULL), dm_double_fma(positiveOne, negativeOne, DM_DOUBLE_PACK(0, 1, 2000000000000000ULL)));
+   EXPECT_EQ(positiveThr, dm_double_fma(positiveTwo, positiveThr, dm_double_neg(positiveThr)));
+   EXPECT_EQ(DM_DOUBLE_PACK(1, -10, 3333499999997531ULL), dm_double_fma(DM_DOUBLE_PACK(0, 0, 9999999999988888ULL), DM_DOUBLE_PACK(0, 0, 9999999999977777ULL), DM_DOUBLE_PACK(1, 2, 1000000000000000ULL)));
+   EXPECT_EQ(DM_DOUBLE_PACK(1, -10, 3333500000000000ULL), dm_double_add(dm_double_mul(DM_DOUBLE_PACK(0, 0, 9999999999988888ULL), DM_DOUBLE_PACK(0, 0, 9999999999977777ULL)), DM_DOUBLE_PACK(1, 2, 1000000000000000ULL)));
+
+   EXPECT_EQ(positiveInf, dm_double_fma(DM_DOUBLE_PACK(0, 256, 1000000000000000ULL), DM_DOUBLE_PACK(0, 256, 2000000000000000ULL), DM_DOUBLE_PACK(1, 511, 1000000000000000ULL)));
+   EXPECT_EQ(positiveZero, dm_double_fma(DM_DOUBLE_PACK(0, -256, 1000000000000000ULL), DM_DOUBLE_PACK(1, -256, 9000000000000000ULL), DM_DOUBLE_PACK(0, -511, 1000000000000000ULL)));
+ }

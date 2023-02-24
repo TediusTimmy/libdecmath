@@ -116,8 +116,7 @@ dm_double dm_double_frexp     (dm_double, int*);       // This is BASE 10!
 dm_double dm_double_ldexp     (dm_double, int);        // This is BASE 10!
 
 dm_double dm_double_fmod (dm_double, dm_double);
-// TODO :
-// dm_double dm_double_fma  (dm_double, dm_double, dm_double);
+dm_double dm_double_fma  (dm_double, dm_double, dm_double);
 
 dm_double dm_double_neg   (dm_double);            // -x
 dm_double dm_double_add   (dm_double, dm_double); // x + y

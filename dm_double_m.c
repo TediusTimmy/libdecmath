@@ -903,6 +903,16 @@ dm_double dm_double_div(dm_double lhs, dm_double rhs)
    return dm_double_div_r(lhs, rhs, dm_global_round_mode);
  }
 
+uint64_t dm_internal_round(uint64_t quot, uint64_t rem)
+ {
+   uint64_t result = 0U;
+   if ((0U != rem) && ((0U == (quot % 10U)) || (5U == (quot % 10U))))
+    {
+      result = 1U;
+    }
+   return result;
+ }
+
 dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
  {
    dm_double result;
@@ -981,10 +991,7 @@ dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
                uint64_t removed;
                removed = rhd % makeShift[(expDiff - 2) + 1];
                rhd /= makeShift[(expDiff - 2) + 1];
-               if ((0U != removed) && ((0U == (rhd % 10U)) || (5U == (rhd % 10U))))
-                {
-                  ++rhd;
-                }
+               rhd += dm_internal_round(rhd, removed);
                expDiff = 2;
              }
             lhd *= makeShift[expDiff + 1];
@@ -1007,10 +1014,7 @@ dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
                uint64_t removed;
                removed = lhd % makeShift[(expDiff - 2) + 1];
                lhd /= makeShift[(expDiff - 2) + 1];
-               if ((0U != removed) && ((0U == (lhd % 10U)) || (5U == (lhd % 10U))))
-                {
-                  ++lhd;
-                }
+               lhd += dm_internal_round(lhd, removed);
                expDiff = 2;
              }
             rhd *= makeShift[expDiff + 1];
@@ -1098,8 +1102,12 @@ dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
             resultExponent = SPECIAL_EXPONENT;
           }
        }
-      else if (resultSignificand < MIN_SIGNIFICAND)
+      else
        {
+         if (expDiff == 1) // If we have gotten here, and an operation like 10 - 1 occurred, then fix the exponent.
+          {
+            --resultExponent;
+          }
          while (resultSignificand < MIN_SIGNIFICAND)
           {
             resultSignificand *= 10U;
@@ -1110,14 +1118,6 @@ dm_double dm_double_add_r(dm_double lhs, dm_double rhs, int round_mode)
             resultSignificand = MIN_SIGNIFICAND;
             resultExponent = SPECIAL_EXPONENT;
           }
-       }
-      else
-       {
-         if (expDiff == 1) // If we have gotten here, and an operation like 10 - 1 occurred, then fix the exponent.
-          {
-            --resultExponent;
-          }
-         // Flush to zero can't happen: that would imply that the lower magnitude number had an exponent less then MIN_EXPONENT
        }
 
       result = DM_DOUBLE_PACK(resultSign, resultExponent, resultSignificand);
@@ -1496,6 +1496,232 @@ dm_double dm_double_fmod(dm_double lhs, dm_double rhs)
       else
        {
          // Result is normal.
+       }
+
+      result = DM_DOUBLE_PACK(resultSign, resultExponent, resultSignificand);
+    }
+
+   return result;
+ }
+
+dm_double dm_double_fma(dm_double lhs, dm_double rhs, dm_double ths)
+ {
+   dm_double result;
+   int prodSign = dm_double_signbit(lhs) != dm_double_signbit(rhs);
+
+      // If any argument is Nan, Zero, or Infinity: then the result is the same as the result of the base operations.
+      // And that means that if any aren't normal.
+   if (!(dm_double_isnormal(lhs) && dm_double_isnormal(rhs) && dm_double_isnormal(ths)))
+    {
+      result = dm_double_add(dm_double_mul(lhs, rhs), ths);
+    }
+   else
+    {
+
+         // Compute the exponent of the product: we defer flush to infinity to the end.
+      int16_t phse = DM_DOUBLE_UNPACK_EXPONENT(lhs) + DM_DOUBLE_UNPACK_EXPONENT(rhs);
+
+         // Now, we can start the multiply proper!
+      dm_muldiv_t lhd;
+      dm_muldiv_loadFrom(lhd, DM_DOUBLE_UNPACK_SIGNIFICAND(lhs));
+
+      dm_muldiv_mulBy(lhd, DM_DOUBLE_UNPACK_SIGNIFICAND(rhs));
+
+      uint64_t temp = MIN_SIGNIFICAND * 10U;
+      dm_muldiv_t test;
+      dm_muldiv_loadFrom(test, BIAS);
+      dm_muldiv_mulBy(test, MIN_SIGNIFICAND);
+      if (!dm_muldiv_less(lhd, test)) // lhd >= BIAS * MIN_SIGNIFICAND
+       {
+         ++phse;
+       }
+      else // Normalize the location of the product.
+       {
+         dm_muldiv_mulBy(lhd, 10U);
+       }
+
+      int32_t resultExponent = phse;
+      uint64_t resultSignificand;
+      int resultSign = prodSign;
+
+      int16_t thse = DM_DOUBLE_UNPACK_EXPONENT(ths);
+      int16_t expDiff = phse - thse;
+      if (expDiff < 0)
+       {
+         expDiff = -expDiff;
+       }
+         // If we are not the special case (the case where we have to do a full subtraction)
+         // If the exponents are equal and the signs different, we may need all of the digits in order to handle cancellation.
+      if (!((expDiff < 2) && (prodSign != dm_double_signbit(ths))))
+       {
+         uint64_t thd = DM_DOUBLE_UNPACK_SIGNIFICAND(ths) * 100U;
+
+         uint64_t phd;
+         uint64_t rem;
+         dm_muldiv_divBy(lhd, temp / 100U, &phd, &rem);
+         phd += dm_internal_round(phd, rem);
+
+         if (phse > thse)
+          {
+            if (expDiff <= (CUTOFF + 1))
+             {
+               uint64_t removed;
+               removed = thd % makeShift[expDiff + 1];
+               thd /= makeShift[expDiff + 1];
+               thd += dm_internal_round(thd, removed);
+             }
+            else
+             {
+               thd = 1U;
+             }
+          }
+         else if (phse < thse)
+          {
+            resultExponent = thse;
+            if (expDiff <= (CUTOFF + 1))
+             {
+               uint64_t removed;
+               removed = phd % makeShift[expDiff + 1];
+               phd /= makeShift[expDiff + 1];
+               phd += dm_internal_round(phd, removed);
+             }
+            else
+             {
+               phd = 1U;
+             }
+          }
+         else
+          {
+            // No normalization needed
+          }
+
+            // Compute the digits and sign.
+         if (prodSign == dm_double_signbit(ths)) // Both same sign
+          {
+            phd += thd;
+          }
+         else // Different Signs
+          {
+            if (phd >= thd) // lhs larger : result sign of lhs
+             {
+               phd -= thd;
+             }
+            else // rhs larger : result sign of rhs (opposite sign of lhs)
+             {
+               phd = thd - phd;
+               resultSign = !resultSign;
+             }
+          }
+         resultSignificand = phd; // This cannot possibly be zero.
+
+            // Normalize the result
+         uint64_t scal = 10U;
+         uint64_t test = BIAS * 10U;
+         if (phd < test) // Did destructive cancellation occur? ie 100 - 1.
+          {
+            --resultExponent;
+          }
+         else
+          {
+            scal *= 10U;
+            test *= 10U;
+            if (phd >= test) // Did overflow occur? ie 9 + 1
+             {
+               ++resultExponent;
+               scal *= 10U;
+             }
+          }
+         resultSignificand = phd / scal;
+         rem = phd % scal;
+         resultSignificand += dm_decideRound(resultSign, resultSignificand & 1U, (int64_t)scal - (int64_t)(rem << 1), rem == 0U, dm_global_round_mode);
+         if (resultSignificand == BIAS)
+          {
+            resultSignificand = MIN_SIGNIFICAND;
+            ++resultExponent;
+          }
+       }
+      else // The pathological case
+       {
+         dm_muldiv_t thd;
+         dm_muldiv_loadFrom(thd, DM_DOUBLE_UNPACK_SIGNIFICAND(ths));
+         dm_muldiv_mulBy(thd, BIAS);
+
+         if (phse > thse)
+          {
+            dm_muldiv_mulBy(lhd, 10U);
+          }
+         else if (phse < thse)
+          {
+            resultExponent = thse;
+            dm_muldiv_mulBy(thd, 10U);
+          }
+         else
+          {
+            // No normalization needed
+          }
+
+         if (!dm_muldiv_less(lhd, thd)) // lhs larger : result sign of lhs
+          {
+            dm_muldiv_sub(lhd, lhd, thd);
+          }
+         else // rhs larger : result sign of rhs (opposite sign of lhs)
+          {
+            dm_muldiv_sub(lhd, thd, lhd);
+            resultSign = !resultSign;
+          }
+
+         dm_muldiv_t test2;
+         dm_muldiv_loadFrom(test2, BIAS);
+         dm_muldiv_mulBy(test2, BIAS);
+         uint64_t rem;
+         if (!!dm_muldiv_zero(lhd))
+          {
+            if (DM_FE_DOWNWARD != dm_global_round_mode)
+             {
+               resultSign = 0;
+             }
+            else
+             {
+               resultSign = 1;
+             }
+            resultExponent = SPECIAL_EXPONENT;
+            resultSignificand = MIN_SIGNIFICAND;
+          }
+         else if (!dm_muldiv_less(lhd, test2))
+          {
+            uint64_t shift = BIAS * 10U;
+            dm_muldiv_divBy(lhd, shift, &resultSignificand, &rem);
+            resultSignificand += dm_decideRound(resultSign, resultSignificand & 1U, (int64_t)(shift) - (int64_t)(rem << 1), rem == 0U, dm_global_round_mode);
+          }
+         else
+          {
+            if (expDiff == 1) // If we have gotten here, and an operation like 10 - 1 occurred, then fix the exponent.
+             {
+               --resultExponent;
+             }
+            while (!!dm_muldiv_less(lhd, test))
+             {
+               dm_muldiv_mulBy(lhd, 10U);
+               --resultExponent;
+             }
+            dm_muldiv_divBy(lhd, BIAS, &resultSignificand, &rem);
+            resultSignificand += dm_decideRound(resultSign, resultSignificand & 1U, (int64_t)BIAS - (int64_t)(rem << 1), rem == 0U, dm_global_round_mode);
+          }
+       }
+
+      if (resultExponent > MAX_EXPONENT) // Flush to infinity?
+       {
+         resultSignificand = DM_INFINITY + MIN_SIGNIFICAND;
+         resultExponent = SPECIAL_EXPONENT;
+       }
+      else if (resultExponent < MIN_EXPONENT) // Flush to zero?
+       {
+         resultSignificand = MIN_SIGNIFICAND;
+         resultExponent = SPECIAL_EXPONENT;
+       }
+      else
+       {
+         // Normal number.
        }
 
       result = DM_DOUBLE_PACK(resultSign, resultExponent, resultSignificand);
