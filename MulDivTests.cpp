@@ -60,10 +60,6 @@ TEST(MulDivLibTest, testMulBy)
    EXPECT_EQ(0x2D6D415BU, res[2]);
    EXPECT_EQ(0x8565E19CU, res[1]);
    EXPECT_EQ(0x207E0001U, res[0]);
-
-   uint64_t ex;
-   dm_muldiv_extract(res, &ex);
-   EXPECT_EQ(0x8565E19C207E0001U, ex);
  }
 
 TEST(MulDivLibTest, testDivBy)

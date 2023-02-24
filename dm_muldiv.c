@@ -93,6 +93,11 @@ void dm_muldiv_copy(dm_muldiv_t dest, dm_muldiv_t src)
    dest[2] = src[2];
    dest[3] = src[3];
  }
+
+void dm_muldiv_extract(dm_muldiv_t source, uint64_t* dest)
+ {
+   *dest = (((uint64_t)source[1]) << 32U) | source[0];
+ }
 #ifdef DM_USE_SLOW_BINARY
 void dm_muldiv_shl1(dm_muldiv_t arg)
  {
@@ -300,15 +305,6 @@ void dm_muldiv_divBy(dm_muldiv_t lhs, uint64_t rhs, uint64_t* quo, uint64_t* rem
     }
 #endif /* DM_USE_SLOW_BINARY */
 #endif /* DM_NO_128_BIT_TYPE */
- }
-
-void dm_muldiv_extract(dm_muldiv_t source, uint64_t* dest)
- {
-#ifndef DM_NO_128_BIT_TYPE
-   *dest = *source;
-#else // DM_NO_128_BIT_TYPE
-   *dest = (((uint64_t)source[1]) << 32U) | source[0];
-#endif
  }
 
 

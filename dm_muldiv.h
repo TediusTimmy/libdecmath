@@ -51,7 +51,6 @@ typedef uint32_t dm_muldiv_t[4];
 void dm_muldiv_loadFrom (dm_muldiv_t, uint64_t);
 void dm_muldiv_mulBy    (dm_muldiv_t, uint64_t);
 void dm_muldiv_divBy    (dm_muldiv_t, uint64_t, uint64_t*, uint64_t*);
-void dm_muldiv_extract  (dm_muldiv_t, uint64_t*);
 
 void dm_muldiv_sub      (dm_muldiv_t, dm_muldiv_t, dm_muldiv_t);
 
