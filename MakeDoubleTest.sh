@@ -10,11 +10,14 @@ fi
 
 rm -f $FILE_TO_TEST.o
 rm -f dm_muldiv.o
+rm -f dm_double_pretty.o
 
 rm -f $FILE_TO_TEST.gcda
 rm -f $FILE_TO_TEST.gcno
 rm -f dm_muldiv.gcda
 rm -f dm_muldiv.gcno
+rm -f dm_double_pretty.gcda
+rm -f dm_double_pretty.gcno
 
 rm -f Base.info
 rm -f Run.info
@@ -31,8 +34,8 @@ if [ "$1" == "clean" ]; then
    exit
 fi
 
-gcc -c -Wall -Wextra -Wpedantic -g --coverage -O0 $FILE_TO_TEST.c dm_muldiv.c
-g++ -o DoubleTests -Wall -Wextra -Wpedantic -g --coverage -O0 -I../External/googletest/include $OPTION DoubleTests.cpp $FILE_TO_TEST.o dm_muldiv.o ../External/googletest/lib/libgtest.a ../External/googletest/lib/libgtest_main.a
+gcc -c -Wall -Wextra -Wpedantic -g --coverage -O0 $FILE_TO_TEST.c dm_muldiv.c dm_double_pretty.c
+g++ -o DoubleTests -Wall -Wextra -Wpedantic -g --coverage -O0 -I../External/googletest/include $OPTION DoubleTests.cpp $FILE_TO_TEST.o dm_muldiv.o dm_double_pretty.o ../External/googletest/lib/libgtest.a ../External/googletest/lib/libgtest_main.a
 
 
 if [ "$1" == "nocov" ]; then

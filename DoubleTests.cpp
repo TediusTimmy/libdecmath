@@ -57,6 +57,8 @@ const uint64_t MIN_SIGNIFICAND = 1000000000000000ULL;
 
 #endif /* MISRAbleC */
 
+#include "dm_double_pretty.h"
+
 TEST(DMDoubleTest, testComparisons) // It was super easy to copy and modify this code from the SlowFloat tests
  {
    dm_double positiveZero = DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 0U); // Special exponent, zero significand : zero
@@ -2681,4 +2683,93 @@ TEST(DMDoubleTest, testFMA)
 
    EXPECT_EQ(positiveInf, dm_double_fma(DM_DOUBLE_PACK(0, 256, 1000000000000000ULL), DM_DOUBLE_PACK(0, 256, 2000000000000000ULL), DM_DOUBLE_PACK(1, 511, 1000000000000000ULL)));
    EXPECT_EQ(positiveZero, dm_double_fma(DM_DOUBLE_PACK(0, -256, 1000000000000000ULL), DM_DOUBLE_PACK(1, -256, 9000000000000000ULL), DM_DOUBLE_PACK(0, -511, 1000000000000000ULL)));
+ }
+
+TEST(DMDoubleTest, testPrettyPrint)
+ {
+   char dest [24];
+
+   dm_double_toprettystring(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 1U), dest);
+   EXPECT_STREQ("NaN", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 1U), dest);
+   EXPECT_STREQ("-NaN", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, DM_INFINITY), dest);
+   EXPECT_STREQ("Inf", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, DM_INFINITY), dest);
+   EXPECT_STREQ("-Inf", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK_ALT(0, SPECIAL_EXPONENT, 0U), dest);
+   EXPECT_STREQ("0", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK_ALT(1, SPECIAL_EXPONENT, 0U), dest);
+   EXPECT_STREQ("-0", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, -511, 1234567890123456ULL), dest);
+   EXPECT_STREQ("1.234567890123456e-511", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, 511, 1234567890123456ULL), dest);
+   EXPECT_STREQ("-1.234567890123456e+511", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, -82, 1234567890123456ULL), dest);
+   EXPECT_STREQ("-1.234567890123456e-82", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, 82, 1234567890123456ULL), dest);
+   EXPECT_STREQ("1.234567890123456e+82", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, 90, 10000000123456789ULL), dest);
+   EXPECT_STREQ("Err", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, 90, 10000000123456789ULL), dest);
+   EXPECT_STREQ("Err", dest);
+
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, 0, 1234567890123456ULL), dest);
+   EXPECT_STREQ("1.234567890123456", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, 0, 1234567890123456ULL), dest);
+   EXPECT_STREQ("-1.234567890123456", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, 1, 1234567890123456ULL), dest);
+   EXPECT_STREQ("12.34567890123456", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, 1, 1234567890123456ULL), dest);
+   EXPECT_STREQ("-12.34567890123456", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, 14, 1234567890123456ULL), dest);
+   EXPECT_STREQ("123456789012345.6", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, 14, 1234567890123456ULL), dest);
+   EXPECT_STREQ("-123456789012345.6", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, 15, 1234567890123456ULL), dest);
+   EXPECT_STREQ("1234567890123456", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, 15, 1234567890123456ULL), dest);
+   EXPECT_STREQ("-1234567890123456", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, 12, 1234567890123000ULL), dest);
+   EXPECT_STREQ("1234567890123", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, 12, 1234567890123000ULL), dest);
+   EXPECT_STREQ("-1234567890123", dest);
+
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, -7, 1234567890123456ULL), dest);
+   EXPECT_STREQ("1.234567890123456e-7", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, -7, 1234567890123456ULL), dest);
+   EXPECT_STREQ("-1.234567890123456e-7", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, -7, 1234567890123450ULL), dest);
+   EXPECT_STREQ("1.234567890123450e-7", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, -7, 1234567890123450ULL), dest);
+   EXPECT_STREQ("-1.234567890123450e-7", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, -7, 1234567890123400ULL), dest);
+   EXPECT_STREQ("0.00000012345678901234", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, -7, 1234567890123400ULL), dest);
+   EXPECT_STREQ("-0.00000012345678901234", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, -5, 1234567890123456ULL), dest);
+   EXPECT_STREQ("0.00001234567890123456", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, -5, 1234567890123456ULL), dest);
+   EXPECT_STREQ("-0.00001234567890123456", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, 0, 1000000000000000ULL), dest);
+   EXPECT_STREQ("1", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, 0, 1000000000000000ULL), dest);
+   EXPECT_STREQ("-1", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, -10, 3000000000000000ULL), dest);
+   EXPECT_STREQ("0.0000000003", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, -10, 3000000000000000ULL), dest);
+   EXPECT_STREQ("-0.0000000003", dest);
  }
