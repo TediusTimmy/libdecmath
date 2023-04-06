@@ -2749,9 +2749,9 @@ TEST(DMDoubleTest, testPrettyPrint)
    EXPECT_STREQ("-1.234567890123456e-7", dest);
 
    dm_double_toprettystring(DM_DOUBLE_PACK(0, -7, 1234567890123450ULL), dest);
-   EXPECT_STREQ("1.234567890123450e-7", dest);
+   EXPECT_STREQ("1.23456789012345e-7", dest);
    dm_double_toprettystring(DM_DOUBLE_PACK(1, -7, 1234567890123450ULL), dest);
-   EXPECT_STREQ("-1.234567890123450e-7", dest);
+   EXPECT_STREQ("-1.23456789012345e-7", dest);
 
    dm_double_toprettystring(DM_DOUBLE_PACK(0, -7, 1234567890123400ULL), dest);
    EXPECT_STREQ("0.00000012345678901234", dest);
@@ -2772,4 +2772,14 @@ TEST(DMDoubleTest, testPrettyPrint)
    EXPECT_STREQ("0.0000000003", dest);
    dm_double_toprettystring(DM_DOUBLE_PACK(1, -10, 3000000000000000ULL), dest);
    EXPECT_STREQ("-0.0000000003", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, -16, 1000000000000000ULL), dest);
+   EXPECT_STREQ("1e-16", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, -16, 1000000000000000ULL), dest);
+   EXPECT_STREQ("-1e-16", dest);
+
+   dm_double_toprettystring(DM_DOUBLE_PACK(0, 20, 1000000000000000ULL), dest);
+   EXPECT_STREQ("1e+20", dest);
+   dm_double_toprettystring(DM_DOUBLE_PACK(1, 20, 1000000000000000ULL), dest);
+   EXPECT_STREQ("-1e+20", dest);
  }

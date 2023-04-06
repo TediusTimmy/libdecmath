@@ -45,6 +45,28 @@ dm_double dm_double_fabs  (dm_double);
 dm_double dm_double_frexp (dm_double, int*);
 void dm_double_tostring   (dm_double, char [25]);
 
+static void conditionResult(char result [24])
+ {
+   int base = 16;
+   if ('-' == result[0])
+    {
+      base = base + 1;
+    }
+   int index = base;
+   while ('0' == result[index])
+    {
+      --index;
+    }
+   if ('.' == result[index])
+    {
+      --index;
+    }
+   if (index != base)
+    {
+      memmove(&result[index + 1], &result[base + 1], 6U);
+    }
+ }
+
    /*
       What is a pretty string?
          If the number is Inf or NaN, print as normal.
@@ -107,6 +129,7 @@ void dm_double_toprettystring (dm_double arg, char result [24])
          (void) memset(temp, '\0', 25U);
          dm_double_tostring(arg, temp);
          memmove(result, temp, 24U);
+         conditionResult(result);
        }
       else if (exponent >= 0) // Numbers that we need to move the radix point to the right for.
        {
@@ -198,6 +221,7 @@ void dm_double_toprettystring (dm_double arg, char result [24])
             (void) memset(temp, '\0', 25U);
             dm_double_tostring(arg, temp);
             memmove(result, temp, 24U);
+            conditionResult(result);
           }
        }
     }
