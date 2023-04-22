@@ -846,18 +846,18 @@ dm_double dm_double_div_r(dm_double lhs, dm_double rhs, int round_mode)
    dm_muldiv_loadFrom(lhd, DM_DOUBLE_UNPACK_SIGNIFICAND(lhs));
    uint64_t rhd = DM_DOUBLE_UNPACK_SIGNIFICAND(rhs);
 
-   dm_muldiv_mulBy(lhd, BIAS);
-   uint64_t resultSignificand, rem;
-   dm_muldiv_divBy(lhd, rhd, &resultSignificand, &rem);
-   if (resultSignificand >= BIAS)
-    {
-      rhd *= 10;
-      dm_muldiv_divBy(lhd, rhd, &resultSignificand, &rem);
-    }
-   else
+   if (DM_DOUBLE_UNPACK_SIGNIFICAND(lhs) < DM_DOUBLE_UNPACK_SIGNIFICAND(rhs))
     {
       --resultExponent;
     }
+   else
+    {
+      rhd *= 10;
+    }
+
+   dm_muldiv_mulBy(lhd, BIAS);
+   uint64_t resultSignificand, rem;
+   dm_muldiv_divBy(lhd, rhd, &resultSignificand, &rem);
       // This can't cause an overflow.
    resultSignificand += dm_decideRound(resultSign, resultSignificand & 1, (int64_t)rhd - (int64_t)(rem << 1), rem == 0, round_mode);
 
