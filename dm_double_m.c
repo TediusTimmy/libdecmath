@@ -906,7 +906,7 @@ dm_double dm_double_div(dm_double lhs, dm_double rhs)
 uint64_t dm_internal_round(uint64_t quot, uint64_t rem)
  {
    uint64_t result = 0U;
-   if ((0U != rem) && ((0U == (quot % 10U)) || (5U == (quot % 10U))))
+   if ((0U != rem) && (0U == (quot % 5U))) // Remainder mod 10 is 0 or 5
     {
       result = 1U;
     }
