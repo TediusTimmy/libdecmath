@@ -653,7 +653,7 @@ dm_float dm_float_from_dm_double(dm_double input)
  {
    int16_t exponent = DM_DOUBLE_UNPACK_EXPONENT(input);
    uint64_t significand = DM_DOUBLE_UNPACK_SIGNIFICAND(input);
-   int sign = input & 0x20000000000000ULL ? 1 : 0;
+   int sign = (input & 0x20000000000000ULL) ? 1 : 0;
 
    if (-512 == exponent) // It's special.
     {
@@ -702,7 +702,7 @@ dm_double dm_double_from_dm_float(dm_float input)
  {
    int16_t exponent = DM_FLOAT_UNPACK_EXPONENT(input);
    uint64_t significand = DM_FLOAT_UNPACK_SIGNIFICAND(input);
-   int sign = input & SIGN_BIT ? 1 : 0;
+   int sign = dm_float_signbit(input);
 
    // Special cases...
    if (exponent == SPECIAL_EXPONENT)
